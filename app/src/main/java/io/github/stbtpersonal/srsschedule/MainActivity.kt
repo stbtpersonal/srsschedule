@@ -3,7 +3,6 @@ package io.github.stbtpersonal.srsschedule
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -18,11 +17,17 @@ import com.google.api.services.drive.DriveScopes
 import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.SheetsScopes
 import kotlinx.android.synthetic.main.activity_main.*
+import java.util.*
 
 
 class MainActivity : Activity() {
     companion object {
         private const val GOOGLE_SIGN_IN_REQUEST = 1
+        private const val SHEET_NAME = "SRS"
+
+        private const val COLUMN_INDEX_LEVEL = "F"
+        private const val COLUMN_INDEX_TIME = "G"
+        private const val START_ROW_INDEX = 2
     }
 
     private val scheduleRecyclerViewAdapter = ScheduleRecyclerViewAdapter()
@@ -92,29 +97,59 @@ class MainActivity : Activity() {
     }
 
     private fun populateSchedule(credential: GoogleAccountCredential) {
+        val levelsAndTimes = this.fetchLevelsAndTimes(credential)
+        val scheduleItems = this.buildScheduleItems(levelsAndTimes)
+        this.scheduleRecyclerViewAdapter.setScheduleItems(scheduleItems)
+
+        this.runOnUiThread { this.showSchedule() }
+    }
+
+    private fun fetchLevelsAndTimes(credential: GoogleAccountCredential): Collection<Pair<Int, Long>> {
+        val levelsAndTimes = mutableListOf<Pair<Int, Long>>()
+
         val jsonFactory = JacksonFactory.getDefaultInstance()
         val httpTransport = AndroidHttp.newCompatibleTransport()
 
         val drive = Drive.Builder(httpTransport, jsonFactory, credential)
             .setApplicationName(getString(R.string.app_name))
             .build()
-
-        val result = drive
-            .files()
-            .list()
-            .setFields("files(id, name, webViewLink)")
-            .setQ("mimeType = 'application/vnd.google-apps.spreadsheet' and name contains '[\"SRS\"]'")
-            .execute()
-        val files = result.files
-        for (file in files) {
-            Log.d("kaka", file.name)
-        }
-
         val sheets = Sheets.Builder(httpTransport, jsonFactory, credential)
             .setApplicationName(getString(R.string.app_name))
             .build()
 
-        this.runOnUiThread { this.showSchedule() }
+        val filesResult = drive
+            .files()
+            .list()
+            .setFields("files(id, name, webViewLink)")
+            .setQ("mimeType = 'application/vnd.google-apps.spreadsheet' and name contains '[\"$SHEET_NAME\"]'")
+            .execute()
+        val files = filesResult.files
+        for (file in files) {
+            val sheetsResult = sheets
+                .spreadsheets()
+                .values()
+                .get(
+                    file.id,
+                    "$SHEET_NAME!$COLUMN_INDEX_LEVEL$START_ROW_INDEX:$COLUMN_INDEX_TIME"
+                )
+                .execute()
+            val values = sheetsResult.getValues()
+            for (row in values) {
+                if (row.isNotEmpty()) {
+                    val level = (row[0] as String).toInt()
+                    val time = (row[1] as String).toLong()
+                    levelsAndTimes.add(Pair(level, time))
+                }
+            }
+        }
+
+        return levelsAndTimes
+    }
+
+    private fun buildScheduleItems(levelsAndTimes: Collection<Pair<Int, Long>>): Collection<ScheduleItem> {
+        val scheduledItems = listOf(ScheduleItem(Date(), 100))
+
+        return scheduledItems
     }
 
     private fun hideSchedule() {
