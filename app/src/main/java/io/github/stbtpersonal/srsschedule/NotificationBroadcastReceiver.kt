@@ -13,7 +13,7 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
                 NotificationScheduler.scheduleNotifications(context)
                 NotificationScheduler.notifyIfRequired(context)
             }
-            NotificationScheduler.hourPassedAction -> {
+            NotificationScheduler.HOUR_PASSED_ACTION -> {
                 NotificationScheduler.notifyIfRequired(context)
             }
         }

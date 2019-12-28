@@ -54,7 +54,7 @@ object ScheduleItemBuilder {
             .sortedBy { it.time }
     }
 
-    fun fetchLevelsAndTimes(
+    private fun fetchLevelsAndTimes(
         context: Context,
         credential: GoogleAccountCredential
     ): Collection<Pair<Int, Long>> {

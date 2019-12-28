@@ -58,18 +58,8 @@ class MainActivity : Activity() {
         }
 
         val account = Account(accountName, accountType)
-        val credential = buildCredential(account)
+        val credential = Google.buildCredential(this, account)
         this.populateSchedule(credential)
-    }
-
-    private fun buildCredential(account: Account): GoogleAccountCredential {
-        val scopes = listOf(
-            SheetsScopes.SPREADSHEETS,
-            DriveScopes.DRIVE_METADATA_READONLY
-        )
-        val credential = GoogleAccountCredential.usingOAuth2(this, scopes)
-        credential.selectedAccount = account
-        return credential
     }
 
     private fun requestSignInAndPopulateSchedule() {
@@ -95,7 +85,7 @@ class MainActivity : Activity() {
                     .getSignedInAccountFromIntent(data)
                     .addOnSuccessListener { result ->
                         val account = result.account!!
-                        val credential = buildCredential(account)
+                        val credential = Google.buildCredential(this, account)
 
                         this.keyValueStore.accountName = account.name
                         this.keyValueStore.accountType = account.type
