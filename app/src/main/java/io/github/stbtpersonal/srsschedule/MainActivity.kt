@@ -1,5 +1,6 @@
 package io.github.stbtpersonal.srsschedule
 
+import android.accounts.Account
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
@@ -32,10 +33,14 @@ class MainActivity : Activity() {
         private val LEVEL_DURATIONS_IN_HOURS = listOf(0, 4, 8, 23, 47, 167, 335, 719, 2879)
     }
 
+    private lateinit var keyValueStore: KeyValueStore
+
     private val scheduleRecyclerViewAdapter = ScheduleRecyclerViewAdapter()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        this.keyValueStore = KeyValueStore(this)
 
         this.setContentView(R.layout.activity_main)
 
@@ -53,10 +58,33 @@ class MainActivity : Activity() {
 
     private fun refresh() {
         this.hideSchedule()
-        this.requestSignIn()
+        this.signInAndPopulateSchedule()
     }
 
-    private fun requestSignIn() {
+    private fun signInAndPopulateSchedule() {
+        val accountName = this.keyValueStore.accountName
+        val accountType = this.keyValueStore.accountType
+        if (accountName == null || accountType == null) {
+            this.requestSignInAndPopulateSchedule()
+            return
+        }
+
+        val account = Account(accountName, accountType)
+        val credential = buildCredential(account)
+        this.populateSchedule(credential)
+    }
+
+    private fun buildCredential(account: Account): GoogleAccountCredential {
+        val scopes = listOf(
+            SheetsScopes.SPREADSHEETS,
+            DriveScopes.DRIVE_METADATA_READONLY
+        )
+        val credential = GoogleAccountCredential.usingOAuth2(this, scopes)
+        credential.selectedAccount = account
+        return credential
+    }
+
+    private fun requestSignInAndPopulateSchedule() {
         val signInOptions = GoogleSignInOptions
             .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
@@ -77,19 +105,14 @@ class MainActivity : Activity() {
             if (resultCode == RESULT_OK) {
                 GoogleSignIn
                     .getSignedInAccountFromIntent(data)
-                    .addOnSuccessListener { account ->
-                        val scopes = listOf(
-                            SheetsScopes.SPREADSHEETS,
-                            DriveScopes.DRIVE_METADATA_READONLY
-                        )
-                        val credential = GoogleAccountCredential.usingOAuth2(this, scopes)
-                        credential.selectedAccount = account.account
+                    .addOnSuccessListener { result ->
+                        val account = result.account!!
+                        val credential = buildCredential(account)
 
-                        object : Thread() {
-                            override fun run() {
-                                this@MainActivity.populateSchedule(credential)
-                            }
-                        }.start()
+                        this.keyValueStore.accountName = account.name
+                        this.keyValueStore.accountType = account.type
+
+                        this.populateSchedule(credential)
                     }
                     .addOnFailureListener { e ->
                         throw Exception(e)
@@ -99,11 +122,16 @@ class MainActivity : Activity() {
     }
 
     private fun populateSchedule(credential: GoogleAccountCredential) {
-        val levelsAndTimes = this.fetchLevelsAndTimes(credential)
-        val scheduleItems = this.buildScheduleItems(levelsAndTimes)
-        this.scheduleRecyclerViewAdapter.setScheduleItems(scheduleItems)
+        val self = this
+        object : Thread() {
+            override fun run() {
+                val levelsAndTimes = self.fetchLevelsAndTimes(credential)
+                val scheduleItems = self.buildScheduleItems(levelsAndTimes)
+                self.scheduleRecyclerViewAdapter.setScheduleItems(scheduleItems)
 
-        this.runOnUiThread { this.showSchedule() }
+                self.runOnUiThread { self.showSchedule() }
+            }
+        }.start()
     }
 
     private fun fetchLevelsAndTimes(credential: GoogleAccountCredential): Collection<Pair<Int, Long>> {
