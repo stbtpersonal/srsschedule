@@ -12,36 +12,6 @@
         android:layout_gravity="center" />
 
     <LinearLayout
-        android:id="@+id/loginContainer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        android:orientation="vertical">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="Enter your API Key" />
-
-        <EditText
-            android:id="@+id/loginEditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:inputType="text"
-            android:textAlignment="center" />
-
-        <Button
-            android:id="@+id/loginButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="10dp"
-            android:text="Log In" />
-    </LinearLayout>
-
-    <LinearLayout
         android:id="@+id/scheduleContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

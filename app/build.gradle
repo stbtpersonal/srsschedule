@@ -34,5 +34,7 @@ dependencies {
     implementation('com.google.apis:google-api-services-sheets:v4-rev20191213-1.30.3') {
         exclude group: 'org.apache.httpcomponents'
     }
-
+    implementation('com.google.apis:google-api-services-drive:v3-rev188-1.25.0') {
+        exclude group: 'org.apache.httpcomponents'
+    }
 }
