@@ -28,6 +28,8 @@ class MainActivity : Activity() {
         private const val COLUMN_INDEX_LEVEL = "F"
         private const val COLUMN_INDEX_TIME = "G"
         private const val START_ROW_INDEX = 2
+
+        private val LEVEL_DURATIONS_IN_HOURS = listOf(0, 4, 8, 23, 47, 167, 335, 719, 2879)
     }
 
     private val scheduleRecyclerViewAdapter = ScheduleRecyclerViewAdapter()
@@ -147,9 +149,36 @@ class MainActivity : Activity() {
     }
 
     private fun buildScheduleItems(levelsAndTimes: Collection<Pair<Int, Long>>): Collection<ScheduleItem> {
-        val scheduledItems = listOf(ScheduleItem(Date(), 100))
+        val now = DateUtils.thisHour()
 
-        return scheduledItems
+        val in24Hours = DateUtils.thisHour()
+        in24Hours.add(Calendar.HOUR_OF_DAY, 24)
+
+        val scheduleItems = mutableMapOf<Calendar, Int>()
+        for ((level, time) in levelsAndTimes) {
+            if (level >= LEVEL_DURATIONS_IN_HOURS.size) {
+                continue
+            }
+
+            var reviewTime = DateUtils.toHour(time)
+            reviewTime.add(Calendar.HOUR_OF_DAY, LEVEL_DURATIONS_IN_HOURS[level])
+
+            if (reviewTime.before(now)) {
+                reviewTime = DateUtils.epoch
+            }
+            if (reviewTime.after(in24Hours)) {
+                reviewTime = DateUtils.later
+            }
+
+            if (!scheduleItems.containsKey(reviewTime)) {
+                scheduleItems[reviewTime] = 0
+            }
+            scheduleItems[reviewTime] = scheduleItems[reviewTime]!! + 1
+        }
+
+        return scheduleItems
+            .map { (time, amount) -> ScheduleItem(time, amount) }
+            .sortedBy { it.time }
     }
 
     private fun hideSchedule() {
