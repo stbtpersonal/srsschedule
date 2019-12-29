@@ -21,14 +21,10 @@ class MainActivity : Activity() {
         private const val GOOGLE_SIGN_IN_REQUEST = 1
     }
 
-    private lateinit var keyValueStore: KeyValueStore
-
     private val scheduleRecyclerViewAdapter = ScheduleRecyclerViewAdapter()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        this.keyValueStore = KeyValueStore(this)
 
         this.setContentView(R.layout.activity_main)
 
@@ -50,8 +46,9 @@ class MainActivity : Activity() {
     }
 
     private fun signInAndPopulateSchedule() {
-        val accountName = this.keyValueStore.accountName
-        val accountType = this.keyValueStore.accountType
+        val keyValueStore = KeyValueStore(this)
+        val accountName = keyValueStore.accountName
+        val accountType = keyValueStore.accountType
         if (accountName == null || accountType == null) {
             this.requestSignInAndPopulateSchedule()
             return
@@ -87,8 +84,9 @@ class MainActivity : Activity() {
                         val account = result.account!!
                         val credential = Google.buildCredential(this, account)
 
-                        this.keyValueStore.accountName = account.name
-                        this.keyValueStore.accountType = account.type
+                        val keyValueStore = KeyValueStore(this)
+                        keyValueStore.accountName = account.name
+                        keyValueStore.accountType = account.type
 
                         this.populateSchedule(credential)
                     }
@@ -103,8 +101,12 @@ class MainActivity : Activity() {
         val self = this
         object : Thread() {
             override fun run() {
-                val scheduleItems = ScheduleItemBuilder.build(self, credential)
+                LevelsAndTimesSource.refresh(self, credential)
+                val levelsAndTimes = LevelsAndTimesSource.get(self)!!
+                val scheduleItems = ScheduleItemBuilder.build(levelsAndTimes)
                 self.scheduleRecyclerViewAdapter.setScheduleItems(scheduleItems)
+
+                NotificationScheduler.notifyIfRequired(self)
 
                 self.runOnUiThread { self.showSchedule() }
             }

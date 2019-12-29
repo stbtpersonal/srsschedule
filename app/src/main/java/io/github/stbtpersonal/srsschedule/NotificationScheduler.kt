@@ -1,6 +1,5 @@
 package io.github.stbtpersonal.srsschedule
 
-import android.accounts.Account
 import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -42,23 +41,13 @@ object NotificationScheduler {
 
     fun notifyIfRequired(context: Context) {
         val keyValueStore = KeyValueStore(context)
-        val accountName = keyValueStore.accountName
-        val accountType = keyValueStore.accountType
-        if (accountName == null || accountType == null) {
-            return
-        }
+        val levelsAndTimes = keyValueStore.levelsAndTimes ?: return
 
-        object : Thread() {
-            override fun run() {
-                val account = Account(accountName, accountType)
-                val credential = Google.buildCredential(context, account)
-                val scheduleItems = ScheduleItemBuilder.build(context, credential)
-                val nowItem = scheduleItems.find { it.time == DateUtils.epoch }
-                if (nowItem != null) {
-                    notify(context, nowItem.amount)
-                }
-            }
-        }.start()
+        val scheduleItems = ScheduleItemBuilder.build(levelsAndTimes)
+        val nowItem = scheduleItems.find { it.time == DateUtils.epoch }
+        if (nowItem != null) {
+            notify(context, nowItem.amount)
+        }
     }
 
     private fun notify(context: Context, reviewsCount: Int) {
