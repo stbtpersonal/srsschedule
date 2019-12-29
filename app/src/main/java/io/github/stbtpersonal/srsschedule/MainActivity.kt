@@ -3,6 +3,7 @@ package io.github.stbtpersonal.srsschedule
 import android.accounts.Account
 import android.app.Activity
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -34,6 +35,9 @@ class MainActivity : Activity() {
             false
         )
         this.scheduleRecyclerView.adapter = this.scheduleRecyclerViewAdapter
+
+        this.refreshButton.setOnClickListener { this.refresh() }
+        this.launchSrsButton.setOnClickListener { this.launchSrs() }
 
         NotificationScheduler.scheduleNotifications(this)
 
@@ -121,5 +125,11 @@ class MainActivity : Activity() {
     private fun showSchedule() {
         this.spinner.visibility = View.GONE
         this.scheduleContainer.visibility = View.VISIBLE
+    }
+
+    private fun launchSrs() {
+        val url = "https://stbtpersonal.github.io/srs/"
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        this.startActivity(intent)
     }
 }
