@@ -11,7 +11,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.Scope
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.services.drive.DriveScopes
 import com.google.api.services.sheets.v4.SheetsScopes
 import kotlinx.android.synthetic.main.activity_main.*
@@ -41,7 +40,12 @@ class MainActivity : Activity() {
 
         NotificationScheduler.scheduleNotifications(this)
 
-        this.refresh()
+        val keyValueStore = KeyValueStore(this)
+        if (keyValueStore.levelsAndTimes == null) {
+            this.refresh()
+            return
+        }
+        this.populateSchedule()
     }
 
     private fun refresh() {
@@ -60,7 +64,8 @@ class MainActivity : Activity() {
 
         val account = Account(accountName, accountType)
         val credential = Google.buildCredential(this, account)
-        this.populateSchedule(credential)
+        LevelsAndTimesSource.refresh(this, credential)
+            .thenRun { this.runOnUiThread(this::populateSchedule) }
     }
 
     private fun requestSignInAndPopulateSchedule() {
@@ -92,7 +97,8 @@ class MainActivity : Activity() {
                         keyValueStore.accountName = account.name
                         keyValueStore.accountType = account.type
 
-                        this.populateSchedule(credential)
+                        LevelsAndTimesSource.refresh(this, credential)
+                            .thenRun { this.runOnUiThread(this::populateSchedule) }
                     }
                     .addOnFailureListener { e ->
                         throw Exception(e)
@@ -101,20 +107,14 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun populateSchedule(credential: GoogleAccountCredential) {
-        val self = this
-        object : Thread() {
-            override fun run() {
-                LevelsAndTimesSource.refresh(self, credential)
-                val levelsAndTimes = LevelsAndTimesSource.get(self)!!
-                val scheduleItems = ScheduleItemBuilder.build(levelsAndTimes)
-                self.scheduleRecyclerViewAdapter.setScheduleItems(scheduleItems)
+    private fun populateSchedule() {
+        val levelsAndTimes = LevelsAndTimesSource.get(this)!!
+        val scheduleItems = ScheduleItemBuilder.build(levelsAndTimes)
+        this.scheduleRecyclerViewAdapter.setScheduleItems(scheduleItems)
 
-                NotificationScheduler.notifyIfRequired(self)
+        NotificationScheduler.notifyIfRequired(this)
 
-                self.runOnUiThread { self.showSchedule() }
-            }
-        }.start()
+        this.showSchedule()
     }
 
     private fun hideSchedule() {
