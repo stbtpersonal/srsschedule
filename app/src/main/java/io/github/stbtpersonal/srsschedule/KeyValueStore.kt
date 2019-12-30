@@ -10,27 +10,31 @@ class KeyValueStore(private val context: Context) {
         this.context.getSharedPreferences("key-value-store", Context.MODE_PRIVATE)
     private val json = Json(JsonConfiguration.Stable)
 
+
+    private val accountNameKey = "account-name"
     var accountName: String?
-        get() = this.sharedPreferences.getString("account-name", null)
+        get() = this.sharedPreferences.getString(accountNameKey, null)
         set(value) = with(this.sharedPreferences.edit()) {
-            putString("account-name", value)
+            putString(accountNameKey, value)
             apply()
         }
 
+    private val accountTypeKey = "account-type"
     var accountType: String?
-        get() = this.sharedPreferences.getString("account-type", null)
+        get() = this.sharedPreferences.getString(accountTypeKey, null)
         set(value) = with(this.sharedPreferences.edit()) {
-            putString("account-type", value)
+            putString(accountTypeKey, value)
             apply()
         }
 
     @Serializable
     data class SerializedLevelsAndTimes(val levelsAndTimes: Collection<Pair<Int, Long>>)
 
+    private val levelsAndTimesKey = "levels-and-times"
     var levelsAndTimes: Collection<Pair<Int, Long>>?
         get() {
             val serialized =
-                this.sharedPreferences.getString("levels-and-times", null) ?: return null
+                this.sharedPreferences.getString(levelsAndTimesKey, null) ?: return null
             val wrapped = this.json.parse(SerializedLevelsAndTimes.serializer(), serialized)
             return wrapped.levelsAndTimes
         }
@@ -38,7 +42,11 @@ class KeyValueStore(private val context: Context) {
             val wrapped = SerializedLevelsAndTimes(value!!)
             val serialized =
                 this@KeyValueStore.json.stringify(SerializedLevelsAndTimes.serializer(), wrapped)
-            putString("levels-and-times", serialized)
+            putString(levelsAndTimesKey, serialized)
             apply()
         }
+
+    fun containsLevelsAndTimes(): Boolean {
+        return this.sharedPreferences.contains(levelsAndTimesKey)
+    }
 }
