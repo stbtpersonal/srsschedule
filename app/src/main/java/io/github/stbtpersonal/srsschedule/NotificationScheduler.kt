@@ -74,6 +74,7 @@ object NotificationScheduler {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
             .build()
 
         NotificationManagerCompat.from(applicationContext).notify(0, notification)
