@@ -20,7 +20,7 @@ object ScheduleItemBuilder {
             var reviewTime = DateUtils.toHour(time)
             reviewTime.add(Calendar.HOUR_OF_DAY, LEVEL_DURATIONS_IN_HOURS[level])
 
-            if (reviewTime.before(now)) {
+            if (reviewTime.before(now) || reviewTime.equals(now)) {
                 reviewTime = DateUtils.epoch
             }
             if (reviewTime.after(in24Hours)) {
