@@ -11,10 +11,10 @@ class NotificationBroadcastReceiver : BroadcastReceiver() {
         when (intent.action) {
             this.bootCompleteAction -> {
                 NotificationScheduler.scheduleNotifications(context)
-                NotificationScheduler.notifyIfRequired(context)
+                NotificationScheduler.notifyIfRequired(context, true)
             }
             NotificationScheduler.HOUR_PASSED_ACTION -> {
-                NotificationScheduler.notifyIfRequired(context)
+                NotificationScheduler.notifyIfRequired(context, true)
             }
         }
     }

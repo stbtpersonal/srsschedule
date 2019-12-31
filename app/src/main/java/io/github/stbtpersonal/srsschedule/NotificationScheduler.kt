@@ -39,18 +39,18 @@ object NotificationScheduler {
         )
     }
 
-    fun notifyIfRequired(context: Context) {
+    fun notifyIfRequired(context: Context, alert: Boolean) {
         val keyValueStore = KeyValueStore(context)
         val levelsAndTimes = keyValueStore.levelsAndTimes ?: return
 
         val scheduleItems = ScheduleItemBuilder.build(levelsAndTimes)
         val nowItem = scheduleItems.find { it.time == DateUtils.epoch }
         if (nowItem != null) {
-            notify(context, nowItem.amount)
+            notify(context, nowItem.amount, alert)
         }
     }
 
-    private fun notify(context: Context, reviewsCount: Int) {
+    private fun notify(context: Context, reviewsCount: Int, alert: Boolean) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val importance = NotificationManager.IMPORTANCE_DEFAULT
             val channel = NotificationChannel(this.CHANNEL_ID, this.CHANNEL_ID, importance)
@@ -74,7 +74,7 @@ object NotificationScheduler {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
-            .setOnlyAlertOnce(true)
+            .setOnlyAlertOnce(!alert)
             .build()
 
         NotificationManagerCompat.from(applicationContext).notify(0, notification)

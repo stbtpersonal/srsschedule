@@ -41,13 +41,17 @@ class MainActivity : Activity() {
         this.launchSrsButton.setOnClickListener { this.launchSrs() }
 
         NotificationScheduler.scheduleNotifications(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
 
         val keyValueStore = KeyValueStore(this)
         if (!keyValueStore.containsLevelsAndTimes()) {
             this.refresh()
-            return
+        } else {
+            this.populateSchedule()
         }
-        this.populateSchedule()
     }
 
     private fun refresh() {
@@ -124,7 +128,7 @@ class MainActivity : Activity() {
         val scheduleItems = ScheduleItemBuilder.build(levelsAndTimes)
         this.scheduleRecyclerViewAdapter.setScheduleItems(scheduleItems)
 
-        NotificationScheduler.notifyIfRequired(this)
+        NotificationScheduler.notifyIfRequired(this, false)
 
         this.showSchedule()
     }
