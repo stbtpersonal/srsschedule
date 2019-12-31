@@ -14,6 +14,7 @@ import java.util.*
 object NotificationScheduler {
     const val HOUR_PASSED_ACTION = "io.github.stbtpersonal.srsschedule.intent.action.HOUR_PASSED"
     const val CHANNEL_ID = "srsschedule"
+    const val NOTIFICATION_ID = 0
 
     fun scheduleNotifications(context: Context) {
         val applicationContext = context.applicationContext
@@ -45,9 +46,17 @@ object NotificationScheduler {
 
         val scheduleItems = ScheduleItemBuilder.build(levelsAndTimes)
         val nowItem = scheduleItems.find { it.time == DateUtils.epoch }
-        if (nowItem != null) {
+        if (nowItem == null) {
+            cancelNotifications(context)
+        } else {
             notify(context, nowItem.amount, alert)
         }
+    }
+
+    private fun cancelNotifications(context: Context) {
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(NOTIFICATION_ID)
     }
 
     private fun notify(context: Context, reviewsCount: Int, alert: Boolean) {
@@ -77,6 +86,6 @@ object NotificationScheduler {
             .setOnlyAlertOnce(!alert)
             .build()
 
-        NotificationManagerCompat.from(applicationContext).notify(0, notification)
+        NotificationManagerCompat.from(applicationContext).notify(NOTIFICATION_ID, notification)
     }
 }
