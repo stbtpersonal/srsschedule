@@ -82,7 +82,6 @@ object NotificationScheduler {
             .setNumber(reviewsCount)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
             .setOnlyAlertOnce(!alert)
             .build()
 
